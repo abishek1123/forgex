@@ -1,0 +1,8 @@
+tag,ckpt,epoch,psnr,ssim,lpips,ms_per_img,params_M
+v1-combo,runs\v1\best.pt,76,28.4272,0.74673,nan,10.253,1.369
+v1-combo,runs\v1\best.pt,76,28.4272,0.74673,0.30857,13.929,1.369
+v1-sharp,runs\v1-sharp\best.pt,30,28.2859,0.7351,0.34595,7.406,1.369
+v1,runs\v1\best.pt,76,28.4272,0.74673,0.30857,12.459,1.369
+v1+tta,runs\v1\best.pt,76,28.4671,0.74798,0.30874,85.027,1.369
+v2,runs\v2\best.pt,50,28.4525,0.74797,0.31523,21.546,3.74
+v2+tta,runs\v2\best.pt,50,28.4831,0.74902,0.31688,162.628,3.74
