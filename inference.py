@@ -51,9 +51,9 @@ def save_image(path, arr, meta):
     Image.fromarray(out).save(path)
 
 
-def restore(model, x, device, use_amp, tta):
-    """x: (H,W) float32 -> (2H,2W) float32 in [0,1]."""
-    t = torch.from_numpy(x)[None, None].to(device)
+def restore_batch(model, xs, device, use_amp, tta):
+    """xs: list of (H,W) float32, all same shape -> list of (2H,2W) float32 in [0,1]."""
+    t = torch.from_numpy(np.stack(xs))[:, None].to(device)
     variants = [t]
     if tta:
         variants = [t, t.flip(-1), t.flip(-2), t.flip(-1, -2),
@@ -63,7 +63,7 @@ def restore(model, x, device, use_amp, tta):
     with torch.inference_mode():
         for k, v in enumerate(variants):
             with torch.autocast("cuda", enabled=use_amp):
-                o = model(v).float()
+                o = model(v.contiguous()).float()
             if tta:
                 if k == 1:
                     o = o.flip(-1)
@@ -80,7 +80,8 @@ def restore(model, x, device, use_amp, tta):
                 elif k == 7:
                     o = o.flip(-1, -2).transpose(-1, -2)
             outs.append(o)
-    return torch.stack(outs).mean(0).clamp(0, 1)[0, 0].cpu().numpy()
+    out = torch.stack(outs).mean(0).clamp(0, 1)[:, 0].cpu().numpy()
+    return [out[i] for i in range(out.shape[0])]
 
 
 def main():
@@ -92,10 +93,15 @@ def main():
     p.add_argument("--fp16", action="store_true", default=True, help="half precision on CUDA (default on)")
     p.add_argument("--no-fp16", dest="fp16", action="store_false")
     p.add_argument("--tta", action="store_true", help="8x self-ensemble: ~+0.2 dB, 8x slower")
+    p.add_argument("--batch", type=int, default=0,
+                   help="images per forward pass; 0 = auto (16 on GPU, 1 on CPU). Batching "
+                        "amortises kernel-launch overhead on GPU but hurts CPU cache locality.")
     a = p.parse_args()
 
     device = torch.device("cuda" if (a.device in ("auto", "cuda") and torch.cuda.is_available()) else "cpu")
     use_amp = a.fp16 and device.type == "cuda"
+    if a.batch <= 0:
+        a.batch = 16 if device.type == "cuda" else 1
 
     if not os.path.isfile(a.weights):
         sys.exit(f"ERROR: weights not found at {a.weights}\n"
@@ -114,15 +120,28 @@ def main():
 
     # Warm-up so the first image does not absorb CUDA init time.
     first, _ = load_image(os.path.join(a.input, files[0]))
-    restore(model, first, device, use_amp, False)
+    restore_batch(model, [first], device, use_amp, False)
     if device.type == "cuda":
         torch.cuda.synchronize()
 
     t0 = time.perf_counter()
+    # Batch images of identical size together: one forward per batch instead of
+    # per image. Mixed sizes (128x128 and 256x256 test inputs) group separately.
+    pending = {}   # shape -> list of (name, array, meta)
+    def flush(shape):
+        group = pending.pop(shape, [])
+        for i in range(0, len(group), a.batch):
+            chunk = group[i:i + a.batch]
+            ys = restore_batch(model, [g[1] for g in chunk], device, use_amp, a.tta)
+            for (name, _, meta), y in zip(chunk, ys):
+                save_image(os.path.join(a.output, name), y, meta)
     for name in files:
         x, meta = load_image(os.path.join(a.input, name))
-        y = restore(model, x, device, use_amp, a.tta)
-        save_image(os.path.join(a.output, name), y, meta)
+        pending.setdefault(x.shape, []).append((name, x, meta))
+        if len(pending[x.shape]) >= a.batch:
+            flush(x.shape)
+    for shape in list(pending):
+        flush(shape)
     if device.type == "cuda":
         torch.cuda.synchronize()
     dt = time.perf_counter() - t0

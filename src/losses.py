@@ -37,6 +37,19 @@ def ssim(x, y, ws=11, sigma=1.5, C1=0.01 ** 2, C2=0.03 ** 2):
     """
     # autocast MUST be disabled explicitly: F.conv2d inside an autocast region
     # re-casts its inputs to fp16 no matter what .float() we call beforehand.
+    # cuDNN TF32 must ALSO be disabled: on Ampere/Ada GPUs "fp32" convolution
+    # runs in TF32 (10-bit mantissa) by default, and the variance term
+    # E[x^2]-E[x]^2 cancels below TF32 precision in flat regions -- measured
+    # to underestimate SSIM by ~0.017 vs CPU on this dataset.
+    prev_tf32 = torch.backends.cudnn.allow_tf32
+    torch.backends.cudnn.allow_tf32 = False
+    try:
+        return _ssim_fp32(x, y, ws, sigma, C1, C2)
+    finally:
+        torch.backends.cudnn.allow_tf32 = prev_tf32
+
+
+def _ssim_fp32(x, y, ws, sigma, C1, C2):
     with torch.amp.autocast(device_type=x.device.type, enabled=False):
         x, y = x.float(), y.float()
         w = _gauss_window(ws, sigma, x.device, x.dtype)
