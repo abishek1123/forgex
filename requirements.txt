@@ -1,14 +1,9 @@
-# Inference needs only these two (plus Pillow if test inputs are .png/.tif):
-torch>=2.0
-numpy>=1.24
+# Inference (run.py) requires ONLY these two packages.
+# Versions are those used to train and validate the submitted model.
+torch==2.13.0
+numpy==2.4.4
 
-# Training / analysis additionally needs:
-scipy>=1.10
-matplotlib>=3.7
-
-# Optional -- for the LPIPS metric only. Never imported by inference.py.
-# lpips>=0.1.4
-
-# BEFORE SUBMITTING: KLA asks for a complete `pip freeze` of the training
-# environment. Run `pip freeze > requirements-full.txt` and commit that too,
-# but keep THIS file minimal so the evaluation script installs cleanly.
+# --- Training / analysis only. NOT imported by run.py. ---
+# scipy==1.17.1
+# matplotlib==3.10.0
+# lpips==0.1.4

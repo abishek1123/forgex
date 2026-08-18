@@ -15,7 +15,7 @@ runs/
 preview*.png
 
 # ...except the single final model we submit
-!weights/model.pt
+!models/model.pt
 
 # KLA repo requirement #5: the restored test outputs MUST be committed
 !outputs/*.npy

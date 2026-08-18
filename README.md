@@ -3,37 +3,49 @@
 Restores degraded semiconductor inspection images: removes speckle and Gaussian
 noise and upscales 2× (128×128 → 256×256, or 256×256 → 512×512).
 
-**Team:** *<team name>* — *<member names>* — *<college>*
+**Team Forgex** — KLA Problem Statement PS01
 
 ---
 
-## Quick start — running inference
+## Quick start
 
 ```bash
-git clone <repo-url>
-cd kla-restore
 pip install -r requirements.txt
 
-python inference.py --input  /path/to/degraded_images \
-                    --output /path/to/restored_images
+python run.py <input-dir> <output-dir>
 ```
 
-That is the whole thing. The script auto-detects CUDA and falls back to CPU,
-loads the weights from `weights/model.pt`, restores every image in `--input`,
-and writes results to `--output` under the same filenames.
+Example:
 
-**Supported input formats:** `.npy` (float32, primary), `.png`, `.tif`/`.tiff`.
-Output is written in the same format as the input. `.npy` outputs are float32
-clipped to `[0, 1]`.
+```bash
+python run.py ./test_images ./restored
+```
 
-Useful flags:
+That is the whole thing. `run.py` reads every `.npy` file in the input
+directory, restores each at 2× resolution, and writes one `.npy` file of the
+same name into the output directory (created automatically if it does not
+exist). It auto-detects CUDA and falls back to CPU.
+
+**Input:** `.npy`, grayscale, shape `(H, W)` or `(H, W, 1)`, float32. Values may
+fall outside `[0, 1]` — that is expected for this degradation and is handled.
+
+**Output:** `.npy`, float32, shape `(2H, 2W)` — or `(2H, 2W, 1)` if the input
+carried a trailing channel axis. Guaranteed finite (no `NaN`/`Inf`) and clipped
+to `[0, 1]`.
+
+**Requirements:** `torch` and `numpy` only. No internet access, no API keys, no
+model downloads, no user interaction, no manual configuration. Weights ship in
+`models/model.pt`.
+
+Optional flags (none required):
 
 | Flag | Effect |
 |---|---|
-| `--weights PATH` | use a different checkpoint |
+| `--weights PATH` | use a different checkpoint (default `models/model.pt`) |
 | `--device cpu` | force CPU |
-| `--no-fp16` | disable half precision (fp16 is on by default on CUDA) |
-| `--tta` | 8× self-ensemble: roughly +0.2 dB, roughly 8× slower. **Off by default.** |
+| `--no-fp16` | disable half precision on CUDA |
+| `--tta` | 8× self-ensemble: +0.04 dB, ~7× slower. **Off by default.** |
+| `--batch N` | images per forward pass (default: 16 on GPU, 1 on CPU) |
 
 The script prints total wall-clock time and milliseconds per image.
 
@@ -44,12 +56,20 @@ The script prints total wall-clock time and milliseconds per image.
 Measured on our held-out validation split of 200 real KLA pairs
 (`make_split(seed=0)` — never seen during training).
 
+Held-out split of 200 real pairs, never seen during training.
+
 | Method | PSNR ↑ | SSIM ↑ | LPIPS ↓ | ms/image |
 |---|---|---|---|---|
-| Bicubic ×2 (no denoising) | 23.40 | — | — | — |
-| **Ours** | *TBD* | *TBD* | *TBD* | *TBD* |
+| Bicubic ×2 (no denoising) | 23.23 | 0.548 | — | — |
+| **Ours — 1.37 M params** | **28.43** | **0.764** | **0.309** | **9.7** |
+| Ours — 3.74 M params (rejected) | 28.45 | 0.765 | 0.315 | 21.0 |
 
-Reproduce with `python src/validate.py --data data/train --ckpt weights/model.pt --baseline`.
+**+5.19 dB over bicubic.** The larger model was rejected: 2.7× the parameters
+bought +0.026 dB and cost 1.7× the inference time.
+
+End-to-end throughput including disk I/O: **31.1 ms/image** over 400 images.
+
+Reproduce with `python src/validate.py --data data/train --ckpt models/model.pt --baseline`.
 
 ---
 
@@ -96,8 +116,9 @@ sharpens edges only where the ground truth has edges.
 ## Repository layout
 
 ```
-inference.py            ← THE SUBMISSION SCRIPT (input dir → output dir)
-weights/model.pt        ← trained weights
+run.py                  ← THE SUBMISSION SCRIPT: python run.py <in-dir> <out-dir>
+models/model.pt         ← trained weights (5.5 MB)
+inference.py            ← identical logic, flag-style CLI (development convenience)
 src/
   degrade.py            degradation model (the "damage machine")
   dataset.py            real + synthetic pair loading, augmentation, split
@@ -146,17 +167,21 @@ The control experiment for the loss ablation:
 python src/train.py --data data/train --out runs/charb --loss charbonnier --amp
 ```
 
-**Hardware used:** *<GPU, platform>* · **Training time:** *<hours>* ·
-**Model size:** *<params>* · **Inference:** *<ms/image on ...>*
+**Hardware used:** NVIDIA RTX 4050 Laptop, 6 GB (75 W), Windows 11 · **Training
+time:** 4.3 h (120 epochs, 60,000 steps) · **Peak VRAM:** 0.95 GB · **Model
+size:** 1.37 M parameters, 5.5 MB · **Inference:** 9.7 ms/image on RTX 4050
 
 ---
 
 ## Notes for reviewers
 
-* `inference.py` imports only `torch` and `numpy` (plus `Pillow`, and only when
-  the inputs are `.png`/`.tif`). It downloads nothing at runtime.
-* It resolves `weights/model.pt` relative to its own location, so it can be run
+* `run.py` is fully self-contained — the network definition is inlined, so it
+  imports only `torch` and `numpy` and depends on no other file in this repo
+  except the weights. It downloads nothing at runtime.
+* It resolves `models/model.pt` relative to its own location, so it can be run
   from any working directory.
+* Outputs are explicitly passed through `nan_to_num` and clamped to `[0,1]`, so
+  the finite-value and range guarantees hold regardless of input.
 * Nothing in the model hardcodes an input resolution; 256×256 → 512×512 works
   without changes.
 * `requirements-full.txt` is the complete `pip freeze` of the training

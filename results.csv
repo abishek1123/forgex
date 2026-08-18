@@ -13,3 +13,7 @@ v1-fix,runs\v1\best.pt,76,28.4272,0.76366,0.30857,23.054,1.369
 v2-fix,runs\v2\best.pt,50,28.4525,0.76491,0.31523,22.88,3.74
 charb-fix,runs\charb\best.pt,34,28.3074,0.74948,0.34058,12.745,1.369
 recenter-fix,runs\recenter\best.pt,30,28.2788,0.75335,0.3417,12.769,1.369
+v1-fix,runs\v1\best.pt,76,28.4272,0.76366,0.30857,9.734,1.369
+v2-fix,runs\v2\best.pt,50,28.4525,0.76491,0.31523,20.997,3.74
+charb-fix,runs\charb\best.pt,34,28.3074,0.74948,0.34058,7.382,1.369
+recenter-fix,runs\recenter\best.pt,30,28.2788,0.75335,0.3417,7.312,1.369
