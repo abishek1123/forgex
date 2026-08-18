@@ -3,7 +3,7 @@
 Restores degraded semiconductor inspection images: removes speckle and Gaussian
 noise and upscales 2× (128×128 → 256×256, or 256×256 → 512×512).
 
-**Team ForgeX** — KLA Problem Statement PS01
+**Team ForgeX** — Abishek SR · Anmol BA · Hardik — VIT Vellore
 
 ---
 

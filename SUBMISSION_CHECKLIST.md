@@ -49,7 +49,7 @@ kla-restore/
 
 ## Remaining manual items
 
-- [ ] Member names, college, contact email — slide 1 of the deck
+- [x] Member names, college, contact email — DONE
 - [ ] Demo video link — slide 8 (optional)
 - [ ] Confirm with organisers whether the repo root must be named `forgex` (repo slug; team is ForgeX)
 - [ ] Upload `ForgeX_KLA_PS01.pdf` + repo link to the i4C portal
