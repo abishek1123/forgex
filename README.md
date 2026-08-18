@@ -117,8 +117,7 @@ sharpens edges only where the ground truth has edges.
 
 ```
 run.py                  ← THE SUBMISSION SCRIPT: python run.py <in-dir> <out-dir>
-models/model.pt         ← trained weights (5.5 MB)
-inference.py            ← identical logic, flag-style CLI (development convenience)
+models/model.pt         ← trained weights, 1.37 M params, 5.5 MB
 src/
   degrade.py            degradation model (the "damage machine")
   dataset.py            real + synthetic pair loading, augmentation, split

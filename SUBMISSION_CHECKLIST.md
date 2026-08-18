@@ -46,10 +46,3 @@ kla-restore/
 | **ForgeX (1.37 M params)** | **28.43** | **0.764** | **0.309** | **9.7** |
 
 +5.19 dB over bicubic. End-to-end incl. disk I/O: 31.1 ms/image over 400 images.
-
-## Remaining manual items
-
-- [x] Member names, college, contact email — DONE
-- [ ] Demo video link — slide 8 (optional)
-- [ ] Confirm with organisers whether the repo root must be named `forgex` (repo slug; team is ForgeX)
-- [ ] Upload `ForgeX_KLA_PS01.pdf` + repo link to the i4C portal
