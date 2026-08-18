@@ -1,4 +1,4 @@
-# Forgex — KLA PS01 final submission checklist
+# ForgeX — KLA PS01 final submission checklist
 
 Verified against the organisers' announcement. Every box below was tested, not assumed.
 
@@ -43,7 +43,7 @@ kla-restore/
 | Method | PSNR | SSIM | LPIPS | ms/image |
 |---|---|---|---|---|
 | Bicubic ×2 | 23.23 | 0.548 | — | — |
-| **Forgex (1.37 M params)** | **28.43** | **0.764** | **0.309** | **9.7** |
+| **ForgeX (1.37 M params)** | **28.43** | **0.764** | **0.309** | **9.7** |
 
 +5.19 dB over bicubic. End-to-end incl. disk I/O: 31.1 ms/image over 400 images.
 
@@ -51,5 +51,5 @@ kla-restore/
 
 - [ ] Member names, college, contact email — slide 1 of the deck
 - [ ] Demo video link — slide 8 (optional)
-- [ ] Confirm with organisers whether the repo root must be named `forgex`
-- [ ] Upload `Forgex_KLA_PS01.pdf` + repo link to the i4C portal
+- [ ] Confirm with organisers whether the repo root must be named `forgex` (repo slug; team is ForgeX)
+- [ ] Upload `ForgeX_KLA_PS01.pdf` + repo link to the i4C portal
